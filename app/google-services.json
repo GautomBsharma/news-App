@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "935695843698",
+    "project_id": "news-short-11dd4",
+    "storage_bucket": "news-short-11dd4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:935695843698:android:f5925bad60a4cb94a55deb",
+        "android_client_info": {
+          "package_name": "com.mksolution.newsshort"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8Sesp_0uiM8BZ0TbPl2MNuZw5fQf_jFY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
