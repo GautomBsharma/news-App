@@ -50,7 +50,7 @@
                     android:layout_marginTop="5dp"
                     android:fontFamily="sans-serif-medium"
                     android:text="TextView"
-                    android:textColor="@color/black"
+                    android:textColor="@color/hinttext"
                     android:textSize="15sp"
                     android:textStyle="normal"
 
@@ -60,7 +60,7 @@
                     app:layout_constraintTop_toBottomOf="@+id/chartTag" />
 
                 <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/imageView3"
+                    android:id="@+id/imChart"
                     android:layout_width="300dp"
                     android:layout_height="300dp"
                     android:layout_margin="10dp"
@@ -79,8 +79,8 @@
                     android:layout_marginEnd="-20dp"
                     android:layout_marginBottom="20dp"
                     android:src="@drawable/sharehint"
-                    app:layout_constraintBottom_toBottomOf="@+id/imageView3"
-                    app:layout_constraintEnd_toEndOf="@+id/imageView3"
+                    app:layout_constraintBottom_toBottomOf="@+id/imChart"
+                    app:layout_constraintEnd_toEndOf="@+id/imChart"
                     app:shapeAppearanceOverlay="@style/roundImageViewShare" />
 
 

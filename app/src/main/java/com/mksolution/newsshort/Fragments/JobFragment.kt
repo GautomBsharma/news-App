@@ -23,72 +23,146 @@ import com.google.firebase.database.ValueEventListener
 import com.mksolution.newsshort.Adapters.JobAdapter
 import com.mksolution.newsshort.Models.Job
 import com.mksolution.newsshort.R
+import com.mksolution.newsshort.Services.JobDatabaseHelper
+import com.mksolution.newsshort.Services.NewsDatabaseHelper
 import com.mksolution.newsshort.databinding.FragmentJobBinding
 
 
 class JobFragment : Fragment() {
     private lateinit var binding: FragmentJobBinding
     private lateinit var adapter: JobAdapter
-    private var jobList: ArrayList<Job>?=null
+    private lateinit var databaseHelper: JobDatabaseHelper
     private var connectivityManager: ConnectivityManager? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var isOnline = false
+    private var isDataLoaded = false
+    private val jobList = arrayListOf<Job>()
+    private var isAppInForeground = false
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         binding = FragmentJobBinding.inflate(layoutInflater)
-        binding.recyclerViewJob.layoutManager = LinearLayoutManager(requireContext())
-
-        jobList = arrayListOf()
-        adapter = JobAdapter(requireContext(), jobList!!)
+        adapter = JobAdapter(requireContext(), jobList)
         binding.recyclerViewJob.adapter = adapter
 
-        setupNetworkCallback()
-        if (isNetworkAvailable(requireContext())) {
-            showLoading()
-            isOnline = true
-            getJob()
+        databaseHelper = JobDatabaseHelper(requireContext())
+        val cachedJobs = databaseHelper.getSavedJobs()
+        if (cachedJobs.isNotEmpty()) {
+            jobList.addAll(cachedJobs)
+            loadPreviousData()
         } else {
-            isOnline = false
-            showNoInternetDialog()
+            showLoading()
         }
 
-        binding.searchGro.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(p0: Editable?) {
+        setupRecyclerView()
+        setupNetworkCallback()
 
-            }
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-            }
+        loadData()
+
+        binding.searchGro.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(p0: Editable?) {}
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                if (binding.searchGro.text.toString().isEmpty())
-                {
-                    getJob()
-                }
-                else {
-                    searchJob(s.toString().lowercase())
+                val query = binding.searchGro.text.toString().lowercase()
+                if (query.isEmpty()) {
+                    loadData()
+                } else {
+                    searchJobs(query)
                 }
             }
         })
+
         return binding.root
+    }
+
+    private fun loadData() {
+        if (isNetworkAvailable(requireContext())) {
+            if (!isDataLoaded) {
+                showLoading()
+                fetchJobsFromFirebase()
+            } else {
+                loadPreviousData()
+            }
+        } else {
+            if (jobList.isEmpty()) {
+                showNoInternetDialog()
+            } else {
+                loadPreviousData()
+            }
+        }
+    }
+
+    private fun loadPreviousData() {
+        adapter.updateData(jobList)
+        hideLoading()
+    }
+
+    private fun fetchJobsFromFirebase() {
+        val reff = FirebaseDatabase.getInstance().reference.child("Job")
+        reff.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val newDataList = arrayListOf<Job>()
+                    for (snap in snapshot.children) {
+                        snap.getValue(Job::class.java)?.let { newDataList.add(it) }
+                    }
+                    newDataList.reverse()
+                    jobList.clear()
+                    jobList.addAll(newDataList)
+                    adapter.updateData(jobList)
+                    hideLoading()
+                    isDataLoaded = true
+                    databaseHelper.saveJobs(jobList)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    private fun searchJobs(query: String) {
+        val searchQuery = FirebaseDatabase.getInstance().reference
+            .child("Job")
+            .orderByChild("jobTitle")
+            .startAt(query)
+            .endAt(query + "\uf8ff")
+
+        searchQuery.addValueEventListener(object : ValueEventListener {
+            override fun onCancelled(error: DatabaseError) {}
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val searchResults = arrayListOf<Job>()
+                for (snap in snapshot.children) {
+                    snap.getValue(Job::class.java)?.let { searchResults.add(it) }
+                }
+                searchResults.reverse()
+                jobList.clear()
+                jobList.addAll(searchResults)
+                adapter.updateData(jobList)
+            }
+        })
+    }
+
+    private fun setupRecyclerView() {
+        binding.recyclerViewJob.layoutManager = LinearLayoutManager(requireContext())
     }
 
     private fun setupNetworkCallback() {
         connectivityManager = requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 if (!isOnline) {
                     isOnline = true
                     requireActivity().runOnUiThread {
-                        Toast.makeText(requireContext(), "Connection restored", Toast.LENGTH_SHORT).show()
-                        if (jobList?.isEmpty() == true){
-
-                            showLoading()
-                            getJob()
+                        if (isAppInForeground) {
+                            Toast.makeText(requireContext(), "Connection restored", Toast.LENGTH_SHORT).show()
                         }
-
+                        if (jobList.isEmpty()) {
+                            showLoading()
+                            fetchJobsFromFirebase()
+                        }
                     }
                 }
             }
@@ -96,8 +170,9 @@ class JobFragment : Fragment() {
             override fun onLost(network: Network) {
                 isOnline = false
                 requireActivity().runOnUiThread {
-
-                    Toast.makeText(requireContext(), "Connection lost", Toast.LENGTH_SHORT).show()
+                    if (isAppInForeground) {
+                        Toast.makeText(requireContext(), "Connection lost", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -109,9 +184,9 @@ class JobFragment : Fragment() {
 
         connectivityManager?.registerNetworkCallback(request, networkCallback!!)
     }
+
     private fun isNetworkAvailable(context: Context): Boolean {
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(network)
         return capabilities != null &&
@@ -126,66 +201,15 @@ class JobFragment : Fragment() {
             .setMessage("Please check your internet connection and try again.")
             .setPositiveButton("OK") { dialog, _ ->
                 dialog.dismiss()
-                showLoading()
+                if (isDataLoaded) {
+                    loadPreviousData()
+                } else {
+                    showLoading()
+                }
             }
             .setCancelable(false)
             .create()
-
         dialog.show()
-    }
-
-    private fun getJob() {
-        val reff = FirebaseDatabase.getInstance().reference.child("Job")
-        reff.addValueEventListener(object : ValueEventListener {
-            @SuppressLint("NotifyDataSetChanged")
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()){
-                    jobList?.clear()  // Clear the list before adding new items
-                    for (snap in snapshot.children) {
-                        val datt = snap.getValue(Job::class.java)
-                        datt?.let { jobList?.add(it) }
-                    }
-                    jobList?.reverse()
-                    adapter.notifyDataSetChanged()
-                    binding.recyclerViewJob.visibility = View.VISIBLE
-                    hideLoading()
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-
-            }
-
-        })
-    }
-
-    private fun searchJob(input:String) {
-        val query= FirebaseDatabase.getInstance().reference
-            .child("Job")
-            .orderByChild("jobTitle")
-            .startAt(input)
-            .endAt(input + "\uf8ff")
-        query.addValueEventListener(object: ValueEventListener
-        {
-            override fun onCancelled(error: DatabaseError) {
-
-            }
-            @SuppressLint("NotifyDataSetChanged")
-            override fun onDataChange(datasnapshot: DataSnapshot) {
-                jobList?.clear()
-                for(snapshot in datasnapshot.children)
-                {
-                    val user=snapshot.getValue(Job::class.java)
-                    if(user!=null)
-                    {
-                        jobList?.add(user)
-
-                    }
-                }
-                jobList?.reverse()
-                adapter.notifyDataSetChanged()
-            }
-        })
     }
 
     private fun showLoading() {
@@ -200,11 +224,20 @@ class JobFragment : Fragment() {
         binding.recyclerViewJob.visibility = View.VISIBLE
     }
 
+    override fun onResume() {
+        super.onResume()
+        isAppInForeground = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        isAppInForeground = false
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         networkCallback?.let {
             connectivityManager?.unregisterNetworkCallback(it)
         }
     }
-
 }

@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.mksolution.newsshort.Models.Job
+import com.mksolution.newsshort.Models.News
 import com.mksolution.newsshort.R
 import com.mksolution.newsshort.ReadJobActivity
 
@@ -61,5 +62,10 @@ class JobAdapter (var context: Context,var jobList: ArrayList<Job>): RecyclerVie
 
             context.startActivity(intent)
         }
+    }
+
+    fun updateData(newData: ArrayList<Job>) {
+        jobList = newData
+        notifyDataSetChanged()
     }
 }

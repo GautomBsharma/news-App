@@ -41,6 +41,8 @@ class HomeFragment : Fragment() {
 
     private var isAppInForeground = false
 
+
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?

@@ -18,6 +18,7 @@ class OthersFragment : Fragment() {
 
         binding = FragmentOthersBinding.inflate(layoutInflater)
 
+
         return binding.root
     }
 }

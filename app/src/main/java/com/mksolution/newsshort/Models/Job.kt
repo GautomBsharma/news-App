@@ -14,6 +14,4 @@ data class Job(
     var jobSalary : String = "",
     val newsTime : Long = 0
 
-
-
 )
