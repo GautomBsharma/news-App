@@ -9,7 +9,7 @@
     <ImageView
         android:id="@+id/newsImg"
         android:layout_width="0dp"
-        android:layout_height="240dp"
+        android:layout_height="220dp"
         android:scaleType="fitXY"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -126,13 +126,14 @@
         app:tint="@color/teal_200" />
 
     <TextView
-        android:id="@+id/textView14"
+        android:id="@+id/tvSorce"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Source : News short "
         android:padding="3dp"
         android:textStyle="bold"
-        android:textSize="11dp"
+        android:textSize="11sp"
+        android:textColor="@color/gray2"
 
         app:layout_constraintEnd_toStartOf="@+id/cardView"
         app:layout_constraintStart_toStartOf="@+id/newsTitle"

@@ -31,16 +31,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/shareNews"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/sharehint"
-            app:layout_constraintBottom_toBottomOf="@+id/cardView"
-            app:layout_constraintEnd_toStartOf="@+id/cardView"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/cardView"
-            app:shapeAppearanceOverlay="@style/roundImageViewShare" />
+
 
 
         <androidx.cardview.widget.CardView
@@ -94,6 +85,19 @@
         </androidx.cardview.widget.CardView>
 
         <TextView
+            android:id="@+id/tvSorce"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Source : News short "
+            android:padding="3dp"
+            android:textStyle="bold"
+            android:textSize="11sp"
+            android:textColor="@color/gray2"
+            app:layout_constraintEnd_toStartOf="@+id/cardView"
+            app:layout_constraintStart_toStartOf="@+id/newsTitle"
+            app:layout_constraintTop_toBottomOf="@+id/newsImg" />
+
+        <TextView
             android:id="@+id/newsTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -102,7 +106,7 @@
             android:padding="5dp"
             android:text="TextView"
             android:textColor="@color/black"
-            android:textSize="17sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -119,7 +123,7 @@
             android:padding="5dp"
             android:text="TextView"
             android:textColor="@color/time_back"
-            android:textSize="17sp"
+            android:textSize="15sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
